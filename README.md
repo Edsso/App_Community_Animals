@@ -2,6 +2,9 @@
 
 Uma plataforma comunitária desenvolvida para conectar pessoas e animais. Este projeto utiliza uma arquitetura moderna baseada em React, Vite e TypeScript, focando em performance e uma interface de usuário elegante.
 
+### Figma - Protótipo
+- **[Figma](https://www.figma.com/design/VNQDkzgdDdh1FTufbPaRF8/App-Animais-Comunitarios?node-id=0-1&t=K6iKMscUjKxWd7al-1)**
+
 ## Tecnologias Utilizadas
 
 O projeto foi construído com as seguintes ferramentas e bibliotecas:
