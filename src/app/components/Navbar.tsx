@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
-import { PawPrint, List, Map, LogOut, Plus } from 'lucide-react';
+import { PawPrint, List, Map, LogOut, Plus, SearchX } from 'lucide-react';
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -34,6 +34,12 @@ export function Navbar() {
               <Link to="/map">
                 <Map className="w-4 h-4 mr-2" />
                 Mapa
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/lost">
+                <SearchX className="w-4 h-4 mr-2" />
+                Perdidos
               </Link>
             </Button>
             <Button variant="default" size="sm" asChild className='bg-black text-white hover:bg-gray-900'>

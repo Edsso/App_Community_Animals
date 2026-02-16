@@ -24,7 +24,7 @@ export const mockAnimals: Animal[] = [
   {
     id: '1',
     name: 'Rex e Mel',
-    photo: 'https://www.pedigree.com.br/cdn-cgi/image/format=auto,q=90/sites/g/files/fnmzdf2401/files/2024-09/conheca-as-racas-de-cachorros-mais-inteligentes-do-mundo_0.jpg',
+    photo: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZG9nc3xlbnwwfHwwfHx8MA%3D%3D',
     species: 'dog',
     location: 'Praça das Figueiras',
     coordinates: { lat: -27.02139, lng: -48.65179 },
@@ -39,7 +39,7 @@ export const mockAnimals: Animal[] = [
   {
     id: '2',
     name: 'Laranjinha',
-    photo: 'https://super.abril.com.br/wp-content/uploads/2020/09/04-09_gato_SITE.jpg?crop=1&resize=1212,909',
+    photo: 'https://images.unsplash.com/photo-1519052537078-e6302a4968d4?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Y2F0fGVufDB8fDB8fHww',
     species: 'cat',
     location: 'Rua Daniel Silvério, Próximo ao comércio local',
     coordinates: { lat: -27.03986, lng: -48.65035 },
