@@ -1,200 +1,176 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { formatPhoneInput, cleanPhoneNumber, formatPhoneDisplay } from '../components/ui/formatters';
 import { Search, MapPin, Calendar, Phone, CheckCircle, X, Plus } from 'lucide-react';
-
-interface LostAnimal {
-  id: string;
-  name: string;
-  photo: string;
-  species: 'dog' | 'cat';
-  lastSeenLocation: string;
-  lastSeenDate: string;
-  description: string;
-  contactName: string;
-  contactPhone: string;
-  found: boolean;
-}
-
-const mockLostAnimals: LostAnimal[] = [
-  {
-    id: '1',
-    name: 'Billy',
-    photo: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsb3N0JTIwZG9nJTIwc2FkfGVufDF8fHx8MTc3MDg2MjAzOXww&ixlib=rb-4.1.0&q=80&w=1080',
-    species: 'dog',
-    lastSeenLocation: 'Praça da Sé',
-    lastSeenDate: '2026-02-14',
-    description: 'Cachorro pequeno, cor marrom claro, usa coleira vermelha. Muito dócil e responde pelo nome.',
-    contactName: 'Roberto Silva',
-    contactPhone: '(11) 98888-7777',
-    found: false,
-  },
-  {
-    id: '2',
-    name: 'Luna',
-    photo: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Y2F0fGVufDB8fDB8fHww',
-    species: 'cat',
-    lastSeenLocation: 'Avenida Paulista, próximo ao MASP',
-    lastSeenDate: '2026-02-15',
-    description: 'Gata cinza com olhos verdes, pelagem curta. Filhote.',
-    contactName: 'Juliana Costa',
-    contactPhone: '(11) 97777-6666',
-    found: false,
-  },
-  {
-    id: '3',
-    name: 'Thor',
-    photo: 'https://images.unsplash.com/photo-1600077106724-946750eeaf3c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiaWclMjBkb2clMjBsb3N0fGVufDF8fHx8MTc3MDg2MjA0MHww&ixlib=rb-4.1.0&q=80&w=1080',
-    species: 'dog',
-    lastSeenLocation: 'Parque Ibirapuera - Portão 10',
-    lastSeenDate: '2026-02-13',
-    description: 'Cachorro grande, preto e branco (Husky), muito peludo. Se assustou com fogos de artifício.',
-    contactName: 'Pedro Alves',
-    contactPhone: '(11) 96666-5555',
-    found: true,
-  },
-  {
-    id: '4',
-    name: 'Mimi',
-    photo: 'https://images.unsplash.com/photo-1606214174585-fe31582dc6ee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvcmFuZ2UlMjBjYXQlMjBsb3N0fGVufDF8fHx8MTc3MDg2MjA0MHww&ixlib=rb-4.1.0&q=80&w=1080',
-    species: 'cat',
-    lastSeenLocation: 'Vila Madalena',
-    lastSeenDate: '2026-02-12',
-    description: 'Gata laranja rajada, pequena, sem coleira. Muito assustada com barulhos.',
-    contactName: 'Carla Mendes',
-    contactPhone: '(11) 95555-4444',
-    found: true,
-  },
-];
+import { lostService, LostAnimal, LostAnimalCreate } from '../services/lost';
+import { toast } from 'sonner';
 
 export default function LostAnimals() {
-  const [lostAnimals, setLostAnimals] = useState<LostAnimal[]>(mockLostAnimals);
+  const [perdidos, setPerdidos] = useState<LostAnimal[]>([]);
+  const [encontrados, setEncontrados] = useState<LostAnimal[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSpecies, setFilterSpecies] = useState<'all' | 'dog' | 'cat'>('all');
   const [showForm, setShowForm] = useState(false);
   const [confirmAlertOpen, setConfirmAlertOpen] = useState(false);
-  const [animalToConfirm, setAnimalToConfirm] = useState<{id: string, name: string} | null>(null);
+  const [animalToConfirm, setAnimalToConfirm] = useState<{id: number, name: string} | null>(null);
+  
   const [formData, setFormData] = useState({
     name: '',
     species: 'dog' as 'dog' | 'cat',
-    lastSeenLocation: '',
-    lastSeenDate: '',
+    last_seen_location: '',
+    last_seen_date: '',
     description: '',
-    contactName: '',
-    contactPhone: '',
-    photoUrl: '',
+    contact_name: '',
+    contact_phone: '',
+    photo: '',
   });
 
-  const filteredAnimals = lostAnimals.filter((animal) => {
+  // Carregar dados da API
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [perdidosData, encontradosData] = await Promise.all([
+        lostService.listarPerdidos(),
+        lostService.listarEncontrados()
+      ]);
+      setPerdidos(perdidosData);
+      setEncontrados(encontradosData);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar animais perdidos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredAnimals = perdidos.filter((animal) => {
     const matchesSearch =
       animal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      animal.lastSeenLocation.toLowerCase().includes(searchQuery.toLowerCase());
+      animal.last_seen_location.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpecies = filterSpecies === 'all' || animal.species === filterSpecies;
-    return matchesSearch && matchesSpecies && !animal.found;
+    return matchesSearch && matchesSpecies;
   });
 
-  const handleMarkAsFound = (id: string, name: string) => {
+  const handleMarkAsFound = (id: number, name: string) => {
     setAnimalToConfirm({ id, name });
     setConfirmAlertOpen(true);
   };
 
-  const confirmMarkAsFound = () => {
+  const confirmMarkAsFound = async () => {
     if (animalToConfirm) {
-        setLostAnimals((prev) =>
-          prev.map((animal) => (animal.id === animalToConfirm.id ? { ...animal, found: true } : animal))
-        );
+      try {
+        await lostService.marcarEncontrado(animalToConfirm.id);
+        
+        // Mover da lista de perdidos para encontrados
+        const animal = perdidos.find(a => a.id === animalToConfirm.id);
+        if (animal) {
+          setPerdidos(prev => prev.filter(a => a.id !== animalToConfirm.id));
+          setEncontrados(prev => [{ ...animal, found: true }, ...prev]);
+        }
+        
+        toast.success(`${animalToConfirm.name} marcado como encontrado!`);
+      } catch (error) {
+        console.error('Erro ao marcar como encontrado:', error);
+        toast.error('Erro ao marcar como encontrado');
+      } finally {
         setAnimalToConfirm(null);
         setConfirmAlertOpen(false);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newAnimal: LostAnimal = {
-      id: Date.now().toString(),
-      name: formData.name,
-      photo: formData.photoUrl || 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXQlMjBwbGFjZWhvbGRlcnxlbnwxfHx8fDE3NzA4NjIwNDB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-      species: formData.species,
-      lastSeenLocation: formData.lastSeenLocation,
-      lastSeenDate: formData.lastSeenDate,
-      description: formData.description,
-      contactName: formData.contactName,
-      contactPhone: formData.contactPhone,
-      found: false,
-    };
-    setLostAnimals((prev) => [newAnimal, ...prev]);
-    setShowForm(false);
-    setFormData({
-      name: '',
-      species: 'dog',
-      lastSeenLocation: '',
-      lastSeenDate: '',
-      description: '',
-      contactName: '',
-      contactPhone: '',
-      photoUrl: '',
-    });
+    
+    try {
+      const newAnimal: LostAnimalCreate = {
+        name: formData.name,
+        photo: formData.photo || null,
+        species: formData.species,
+        last_seen_location: formData.last_seen_location,
+        last_seen_date: formData.last_seen_date,
+        description: formData.description,
+        contact_name: formData.contact_name,
+        contact_phone: formData.contact_phone.replace(/\D/g, ''),
+      };
+
+      const created = await lostService.reportar(newAnimal);
+      setPerdidos(prev => [created, ...prev]);
+      
+      setShowForm(false);
+      setFormData({
+        name: '',
+        species: 'dog',
+        last_seen_location: '',
+        last_seen_date: '',
+        description: '',
+        contact_name: '',
+        contact_phone: '',
+        photo: '',
+      });
+      
+      toast.success('Animal perdido reportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao reportar:', error);
+      toast.error('Erro ao reportar animal perdido');
+    }
   };
 
-  const ConfirmAlert = ({
-    isOpen,
-    onClose,
-    onConfirm,
-    animalName
-}: {
+  const ConfirmAlert = ({ isOpen, onClose, onConfirm, animalName }: {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
     animalName: string;
-}) => {
+  }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">Confirmar</h3>
-            <p className="text-gray-600 mb-6">
+          <h3 className="text-lg font-semibold mb-4">Confirmar</h3>
+          <p className="text-gray-600 mb-6">
             Tem certeza que <span className="font-semibold">{animalName}</span> foi encontrado(a)?
-            </p>
-            <div className="flex justify-end gap-3">
+          </p>
+          <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>
-                Cancelar
+              Cancelar
             </Button>
-            <Button 
-                onClick={onConfirm}
-                className="bg-green-600 text-white hover:bg-green-700"
-            >
-                Confirmar
+            <Button onClick={onConfirm} className="bg-green-600 text-white hover:bg-green-700">
+              Confirmar
             </Button>
-            </div>
           </div>
         </div>
+      </div>
     );
-};
+  };
 
-const formatPhone = (phone: string) => {
-    const numbers = phone.replace(/\D/g, '');
-
-    if (numbers.length <= 10) {
-      return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    }else {
-      return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    }
-};
+  if (loading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-6 flex items-center justify-center">
+        <div className="text-center">Carregando...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-6">
-        <ConfirmAlert
-          isOpen={confirmAlertOpen}
-          onClose={() => {
-            setConfirmAlertOpen(false);
-            setAnimalToConfirm(null);
-          }}
-          onConfirm={confirmMarkAsFound}
-          animalName={animalToConfirm?.name || ''}
-        />
+      <ConfirmAlert
+        isOpen={confirmAlertOpen}
+        onClose={() => {
+          setConfirmAlertOpen(false);
+          setAnimalToConfirm(null);
+        }}
+        onConfirm={confirmMarkAsFound}
+        animalName={animalToConfirm?.name || ''}
+      />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
@@ -237,7 +213,7 @@ const formatPhone = (phone: string) => {
                   <div>
                     <label className="block text-sm font-medium mb-2">Tipo</label>
                     <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
                       value={formData.species}
                       onChange={(e) =>
                         setFormData({ ...formData, species: e.target.value as 'dog' | 'cat' })
@@ -251,9 +227,9 @@ const formatPhone = (phone: string) => {
                     <label className="block text-sm font-medium mb-2">Local Visto pela Última Vez</label>
                     <Input
                       required
-                      value={formData.lastSeenLocation}
+                      value={formData.last_seen_location}
                       onChange={(e) =>
-                        setFormData({ ...formData, lastSeenLocation: e.target.value })
+                        setFormData({ ...formData, last_seen_location: e.target.value })
                       }
                       placeholder="Ex: Praça da República"
                     />
@@ -263,19 +239,20 @@ const formatPhone = (phone: string) => {
                     <Input
                       required
                       type="date"
-                      value={formData.lastSeenDate}
+                      value={formData.last_seen_date}
                       onChange={(e) =>
-                        setFormData({ ...formData, lastSeenDate: e.target.value })
+                        setFormData({ ...formData, last_seen_date: e.target.value })
                       }
+                      className="bg-white"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Seu Nome</label>
                     <Input
                       required
-                      value={formData.contactName}
+                      value={formData.contact_name}
                       onChange={(e) =>
-                        setFormData({ ...formData, contactName: e.target.value })
+                        setFormData({ ...formData, contact_name: e.target.value })
                       }
                       placeholder="Nome para contato"
                     />
@@ -284,10 +261,10 @@ const formatPhone = (phone: string) => {
                     <label className="block text-sm font-medium mb-2">Telefone</label>
                     <Input
                       required
-                      value={formData.contactPhone}
+                      value={formData.contact_phone}
                       onChange={(e) => {
-                        const formatted = formatPhone(e.target.value);
-                        setFormData({ ...formData, contactPhone: formatted });
+                        const formatted = formatPhoneInput(e.target.value);
+                        setFormData({ ...formData, contact_phone: formatted });
                       }}
                       placeholder="(11) 98765-4321"
                       maxLength={15}
@@ -296,8 +273,8 @@ const formatPhone = (phone: string) => {
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">URL da Foto (opcional)</label>
                     <Input
-                      value={formData.photoUrl}
-                      onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
+                      value={formData.photo}
+                      onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
                       placeholder="https://exemplo.com/foto.jpg"
                     />
                   </div>
@@ -369,7 +346,7 @@ const formatPhone = (phone: string) => {
               <Card key={animal.id} className="overflow-hidden">
                 <div className="relative">
                   <img
-                    src={animal.photo}
+                    src={animal.photo || 'https://via.placeholder.com/300'}
                     alt={animal.name}
                     className="w-full h-48 object-cover"
                   />
@@ -386,12 +363,12 @@ const formatPhone = (phone: string) => {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-start gap-2 text-sm text-gray-600">
                       <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                      <span>{animal.lastSeenLocation}</span>
+                      <span>{animal.last_seen_location}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="w-4 h-4 shrink-0" />
                       <span>
-                        {new Date(animal.lastSeenDate).toLocaleDateString('pt-BR')}
+                        {new Date(animal.last_seen_date).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
                   </div>
@@ -402,22 +379,21 @@ const formatPhone = (phone: string) => {
 
                   <div className="border-t pt-4 space-y-2">
                     <div className="text-sm">
-                      <span className="font-medium">Contato:</span> {animal.contactName}
+                      <span className="font-medium">Contato:</span> {animal.contact_name}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Phone className="w-4 h-4" />
                       <a
-                        href={`tel:${animal.contactPhone}`}
+                        href={`tel:${cleanPhoneNumber(animal.contact_phone)}`}
                         className="text-orange-600 hover:underline"
                       >
-                        {animal.contactPhone}
+                        {formatPhoneDisplay(animal.contact_phone)}
                       </a>
                     </div>
                   </div>
 
                   <Button
-                    className="w-full mt-4"
-                    variant="outline"
+                    className="w-full mt-4 bg-green-600 text-white hover:bg-green-700"
                     onClick={() => handleMarkAsFound(animal.id, animal.name)}
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
@@ -429,35 +405,33 @@ const formatPhone = (phone: string) => {
           </div>
         )}
 
-        {/* Animais Encontrados */}
-        {lostAnimals.filter((a) => a.found).length > 0 && (
+        {/* Recently Found Animals */}
+        {encontrados.length > 0 && (
           <div className="mt-12">
             <h2 className="text-2xl font-bold mb-4 text-green-700">
               ✓ Animais Encontrados Recentemente
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lostAnimals
-                .filter((a) => a.found)
-                .map((animal) => (
-                  <Card key={animal.id} className="overflow-hidden opacity-75">
-                    <div className="relative">
-                      <img
-                        src={animal.photo}
-                        alt={animal.name}
-                        className="w-full h-48 object-cover grayscale"
-                      />
-                      <Badge className="absolute top-2 right-2 bg-green-600">
-                        Encontrado
-                      </Badge>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-xl font-bold mb-2">{animal.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        Encontrado! Entre em contato com {animal.contactName} para mais informações.
-                      </p>
-                    </div>
-                  </Card>
-                ))}
+              {encontrados.map((animal) => (
+                <Card key={animal.id} className="overflow-hidden opacity-75">
+                  <div className="relative">
+                    <img
+                      src={animal.photo || 'https://via.placeholder.com/300'}
+                      alt={animal.name}
+                      className="w-full h-48 object-cover grayscale"
+                    />
+                    <Badge className="absolute top-2 right-2 bg-green-600">
+                      Encontrado
+                    </Badge>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-xl font-bold mb-2">{animal.name}</h3>
+                    <p className="text-sm text-gray-600">
+                      Encontrado! Entre em contato com {animal.contact_name} pelo telefone {formatPhoneDisplay(animal.contact_phone)} para mais informações.
+                    </p>
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         )}

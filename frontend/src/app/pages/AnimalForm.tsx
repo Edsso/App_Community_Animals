@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAnimals } from '../contexts/AnimalContext';
 import { Button } from '../components/ui/button';
@@ -7,32 +7,55 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { formatPhoneInput, cleanPhoneNumber } from '../components/ui/formatters';
 import { Switch } from '../components/ui/switch';
 import { ArrowLeft, Camera } from 'lucide-react';
 import { toast } from 'sonner';
+import { AnimalCreate, AnimalUpdate } from '../services/animals';
 
 export default function AnimalForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addAnimal, getAnimal, updateAnimal } = useAnimals();
+  const { addAnimal, getAnimal, updateAnimal, loading } = useAnimals();
   const isEditing = id && id !== 'new';
   const existingAnimal = isEditing ? getAnimal(id) : null;
 
   const [formData, setFormData] = useState({
-    name: existingAnimal?.name || '',
-    photo: existingAnimal?.photo || '',
-    species: existingAnimal?.species || 'dog',
-    location: existingAnimal?.location || '',
-    coordinates: existingAnimal?.coordinates || { lat: -23.5505, lng: -46.6333 },
-    caretaker: existingAnimal?.caretaker || '',
-    caretakerContact: existingAnimal?.caretakerContact || '',
-    vaccinated: existingAnimal?.vaccinated || false,
-    vaccineDetails: existingAnimal?.vaccineDetails || '',
-    neutered: existingAnimal?.neutered || false,
-    description: existingAnimal?.description || '',
+    name: '',
+    photo: '',
+    species: 'dog' as 'dog' | 'cat',
+    location: '',
+    coordinates: { lat: -23.5505, lng: -46.6333 },
+    caretaker: '',
+    caretakerContact: '',
+    vaccinated: false,
+    vaccineDetails: '',
+    neutered: false,
+    description: '',
   });
 
-  const handleSubmit = (e: FormEvent) => {
+  useEffect(() => {
+    if (existingAnimal) {
+      setFormData({
+        name: existingAnimal.name,
+        photo: existingAnimal.photo || '',
+        species: existingAnimal.species,
+        location: existingAnimal.location,
+        coordinates: {
+          lat: existingAnimal.latitude,
+          lng: existingAnimal.longitude
+        },
+        caretaker: existingAnimal.caretaker,
+        caretakerContact: existingAnimal.caretaker_contact || '',
+        vaccinated: existingAnimal.vaccinated,
+        vaccineDetails: existingAnimal.vaccine_details || '',
+        neutered: existingAnimal.neutered,
+        description: existingAnimal.description || '',
+      });
+    }
+  }, [existingAnimal]);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!formData.name || !formData.location || !formData.caretaker) {
@@ -40,23 +63,54 @@ export default function AnimalForm() {
       return;
     }
 
-    if (isEditing && existingAnimal) {
-      updateAnimal(id, {
-        ...formData,
-        dateAdded: existingAnimal.dateAdded,
-      });
-      toast.success('Animal atualizado com sucesso!');
-    } else {
-        const animalWithDate = {
-            ...formData,
-            dateAdded: new Date().toISOString(),
+    try {
+      if (isEditing && existingAnimal) {
+
+        const updateData: AnimalUpdate = {
+          name: formData.name,
+          photo: formData.photo || null,
+          location: formData.location,
+          caretaker: formData.caretaker,
+          caretaker_contact: formData.caretakerContact || null,
+          vaccinated: formData.vaccinated,
+          vaccine_details: formData.vaccineDetails || null,
+          neutered: formData.neutered,
+          description: formData.description || null,
+        };
+        
+        await updateAnimal(id, updateData);
+        toast.success('Animal atualizado com sucesso!');
+      } else {
+
+        const animalData: AnimalCreate = {
+          name: formData.name,
+          photo: formData.photo || null,
+          species: formData.species,
+          location: formData.location,
+          latitude: formData.coordinates.lat,
+          longitude: formData.coordinates.lng,
+          caretaker: formData.caretaker,
+          caretaker_contact: formData.caretakerContact || null,
+          vaccinated: formData.vaccinated,
+          vaccine_details: formData.vaccineDetails || null,
+          neutered: formData.neutered,
+          description: formData.description || null,
         };
 
-      addAnimal(animalWithDate);
-      toast.success('Animal cadastrado com sucesso!');
-    }
+        await addAnimal(animalData);
+        toast.success('Animal cadastrado com sucesso!');
+      }
 
-    navigate('/animals');
+      navigate('/animals');
+    } catch (error) {
+      toast.error('Erro ao salvar animal');
+      console.error(error);
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneInput(e.target.value);
+    setFormData({ ...formData, caretakerContact: formatted });
   };
 
   const handlePhotoUrlChange = (url: string) => {
@@ -186,12 +240,8 @@ export default function AnimalForm() {
                     id="caretakerContact"
                     placeholder="(11) 98765-4321"
                     value={formData.caretakerContact}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        caretakerContact: e.target.value,
-                      })
-                    }
+                    onChange={handlePhoneChange}
+                    maxLength={15}
                   />
                 </div>
               </div>
@@ -210,9 +260,11 @@ export default function AnimalForm() {
                     id="vaccinated"
                     checked={formData.vaccinated}
                     onCheckedChange={(checked) =>
-                      setFormData({ ...formData, vaccinated: checked,
+                      setFormData({ 
+                        ...formData, 
+                        vaccinated: checked,
                         vaccineDetails: checked ? formData.vaccineDetails : ''
-                       })
+                      })
                     }
                   />
                 </div>
@@ -275,11 +327,16 @@ export default function AnimalForm() {
                   variant="outline"
                   className="flex-1"
                   onClick={() => navigate('/animals')}
+                  disabled={loading}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" className="flex-1 bg-black text-white hover:bg-gray-900">
-                  {isEditing ? 'Salvar Alterações' : 'Cadastrar Animal'}
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-black text-white hover:bg-gray-900"
+                  disabled={loading}
+                >
+                  {loading ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Cadastrar Animal')}
                 </Button>
               </div>
             </form>

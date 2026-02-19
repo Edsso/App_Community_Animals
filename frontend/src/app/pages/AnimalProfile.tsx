@@ -3,36 +3,50 @@ import { useAnimals } from '../contexts/AnimalContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import {
-  ArrowLeft,
-  MapPin,
-  User,
-  Phone,
-  Syringe,
-  Shield,
-  Calendar,
-  Edit,
-  Trash2,
-} from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '../components/ui/alert-dialog';
+import { ArrowLeft, MapPin, User, Phone, Syringe, Shield, Calendar, Edit, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
+import { formatPhoneDisplay } from '../components/ui/formatters';
 import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 
 export default function AnimalProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { getAnimal, deleteAnimal } = useAnimals();
+  const [loading, setLoading] = useState(true);
+  const [animal, setAnimal] = useState<any>(null);
 
-  const animal = id ? getAnimal(id) : null;
+  useEffect(() => {
+    if (id) {
+      // Converte id para número, pois no backend é number
+      const numericId = parseInt(id);
+      const foundAnimal = getAnimal(numericId.toString());
+      setAnimal(foundAnimal);
+      setLoading(false);
+    }
+  }, [id, getAnimal]);
+
+  const handleDelete = async () => {
+    if (animal) {
+      await deleteAnimal(animal.id.toString());
+      toast.success('Animal removido com sucesso');
+      navigate('/animals');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">Carregando...</div>
+      </div>
+    );
+  }
 
   if (!animal) {
     return (
@@ -46,17 +60,6 @@ export default function AnimalProfile() {
       </div>
     );
   }
-
-  const handleDelete = () => {
-    deleteAnimal(animal.id);
-    toast.success('Animal removido com sucesso');
-    navigate('/animals');
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,16 +77,19 @@ export default function AnimalProfile() {
           {/* Coluna da Foto */}
           <div className="md:col-span-1">
             <Card className="overflow-hidden sticky top-24">
-              <div className="aspect-ratio 3/4 bg-gray-100">
+              <div className="aspect-3/4 bg-gray-100">
                 <img
-                  src={animal.photo}
+                  src={animal.photo || 'https://via.placeholder.com/300'}
                   alt={animal.name}
                   className="w-full h-full object-cover"
                 />
               </div>
               <CardContent className="p-4">
                 <div className="flex gap-2">
-                  <Button className="flex-4 bg-black text-white hover:bg-gray-900" asChild>
+                  <Button 
+                    className="flex-4 bg-black text-white hover:bg-gray-800"
+                    asChild
+                  >
                     <Link to={`/animal/${animal.id}/edit`}>
                       <Edit className="w-4 h-4 mr-2" />
                       Editar
@@ -91,11 +97,14 @@ export default function AnimalProfile() {
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" className='flex-1 bg-red-600 hover:bg-red-700 text-white'>
+                      <Button 
+                        variant="destructive" 
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white flex items-center justify-center px-0"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-white">
+                    <AlertDialogContent className="bg-white rounded-lg shadow-lg">
                       <AlertDialogHeader>
                         <AlertDialogTitle>Remover animal?</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -105,7 +114,7 @@ export default function AnimalProfile() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className='text-white bg-red-600 hover:bg-red-700'>
+                        <AlertDialogAction onClick={handleDelete} className='bg-red-600 hover:bg-red-700 text-white'>
                           Remover
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -127,7 +136,7 @@ export default function AnimalProfile() {
                     variant={animal.species === 'dog' ? 'default' : 'secondary'}
                     className="text-base px-3 py-1"
                   >
-                    {animal.species === 'dog' ? '🐶 Cachorro' : '🐱 Gato'}
+                    {animal.species === 'dog' ? '🐕 Cachorro' : '🐱 Gato'}
                   </Badge>
                 </div>
 
@@ -151,8 +160,8 @@ export default function AnimalProfile() {
                   <div className="text-center">
                     <MapPin className="w-8 h-8 mx-auto mb-2" />
                     <p className="text-sm">
-                      Lat: {animal.coordinates.lat.toFixed(4)}, Lng:{' '}
-                      {animal.coordinates.lng.toFixed(4)}
+                      Lat: {animal.latitude?.toFixed(4) || animal.coordinates?.lat?.toFixed(4)}, 
+                      Lng: {animal.longitude?.toFixed(4) || animal.coordinates?.lng?.toFixed(4)}
                     </p>
                   </div>
                 </div>
@@ -167,10 +176,12 @@ export default function AnimalProfile() {
                   Cuidador
                 </h2>
                 <p className="text-gray-700 mb-2">{animal.caretaker}</p>
-                {animal.caretakerContact && (
+                {animal.caretaker_contact && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Phone className="w-4 h-4" />
-                    <span>{animal.caretakerContact}</span>
+                    <a href={`tel:${animal.caretaker_contact.replace(/\D/g, '')}`}>
+                      {formatPhoneDisplay(animal.caretaker_contact)}
+                    </a>
                   </div>
                 )}
               </CardContent>
@@ -198,9 +209,9 @@ export default function AnimalProfile() {
                       <p className="font-medium">
                         {animal.vaccinated ? 'Vacinado' : 'Não vacinado'}
                       </p>
-                      {animal.vaccinated && animal.vaccineDetails && (
+                      {animal.vaccinated && animal.vaccine_details && (
                         <p className="text-sm text-gray-600 mt-1">
-                          {animal.vaccineDetails}
+                          {animal.vaccine_details}
                         </p>
                       )}
                       {!animal.vaccinated && (
@@ -245,7 +256,7 @@ export default function AnimalProfile() {
                 <div className="flex items-center gap-2 text-gray-600">
                   <Calendar className="w-4 h-4" />
                   <span className="text-sm">
-                    Cadastrado em {formatDate(animal.dateAdded)}
+                    Cadastrado em {formatDate(animal.date_added || animal.dateAdded)}
                   </span>
                 </div>
               </CardContent>

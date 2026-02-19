@@ -1,3 +1,5 @@
 frontend/node_modules/
 .vscode/
 .vite
+# backend/
+# frontend/src/app/services/

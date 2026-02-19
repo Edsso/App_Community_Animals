@@ -1,17 +1,19 @@
-import { Animal, User } from '../data/mockData';
+import { Animal, AnimalCreate, AnimalUpdate } from '../services/animals';
 
 interface AuthContextType {
-  user: User | null;
+  user: any | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
 interface AnimalContextType {
   animals: Animal[];
-  addAnimal: (animal: Omit<Animal, 'id' | 'dateAdded'>) => void;
-  updateAnimal: (id: string,  animal: Partial<Animal>) => void;
-  deleteAnimal: (id: string) => void;
+  addAnimal: (animal: AnimalCreate) => Promise<Animal>;
+  updateAnimal: (id: string, animal: AnimalUpdate) => Promise<Animal>;
+  deleteAnimal: (id: string) => Promise<void>;
   getAnimal: (id: string) => Animal | undefined;
+  loading?: boolean;
+  error?: string | null;
 }
 
 export type { AuthContextType, AnimalContextType };

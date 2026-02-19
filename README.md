@@ -42,7 +42,10 @@ git clone [https://github.com/Edsso/App_Community_Animals.git](https://github.co
 # 2. Entre na pasta do projeto
 cd App_Community_Animals
 
-# 3. Instale todas as dependências
+# 3. Entre na pasta do frontend
+cd frontend
+
+# 4. Instale todas as dependências
 npm install
 
 # 4. Instale o React Router DOM
@@ -57,6 +60,20 @@ npm install lucide-react sonner
 # 7. Instale o Shadcn/UI e dependências do Radix
 npm install class-variance-authority next-themes @radix-ui/react-slot @radix-ui/react-label @radix-ui/react-select @radix-ui/react-switch @radix-ui/react-alert-dialog @radix-ui/react-dialog
 
-# 8. Inicie o servidor de desenvolvimento
+# 8. Inicie o servidor do Front-End
 npm run dev
+```
+
+No Back-end, coloque seus dados do BD em .env e config.py
+
+```bash
+# 9. Entra na pasta do Back-End
+# Abra um novo terminal
+cd backend
+
+# 10. Instale as dependencias
+pip install requirements.txt
+
+# 11. Inicie o servidor do Back-End
+uvicorn app.main:app --reload
 ```
