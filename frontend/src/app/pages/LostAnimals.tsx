@@ -8,16 +8,19 @@ import { Search, MapPin, Calendar, Phone, CheckCircle, X, Plus } from 'lucide-re
 import { lostService, LostAnimal, LostAnimalCreate } from '../services/lost';
 import { toast } from 'sonner';
 
+import { useSearchParams } from 'react-router';
+
 export default function LostAnimals() {
+  const [searchParams] = useSearchParams();
   const [perdidos, setPerdidos] = useState<LostAnimal[]>([]);
   const [encontrados, setEncontrados] = useState<LostAnimal[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSpecies, setFilterSpecies] = useState<'all' | 'dog' | 'cat'>('all');
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(searchParams.get('report') === 'true');
   const [confirmAlertOpen, setConfirmAlertOpen] = useState(false);
-  const [animalToConfirm, setAnimalToConfirm] = useState<{id: number, name: string} | null>(null);
-  
+  const [animalToConfirm, setAnimalToConfirm] = useState<{ id: number, name: string } | null>(null);
+
   const [formData, setFormData] = useState({
     name: '',
     species: 'dog' as 'dog' | 'cat',
@@ -28,6 +31,13 @@ export default function LostAnimals() {
     contact_phone: '',
     photo: '',
   });
+
+  // Reage a mudanças na URL (redirecionamento da IA)
+  useEffect(() => {
+    if (searchParams.get('report') === 'true') {
+      setShowForm(true);
+    }
+  }, [searchParams]);
 
   // Carregar dados da API
   useEffect(() => {
@@ -68,14 +78,14 @@ export default function LostAnimals() {
     if (animalToConfirm) {
       try {
         await lostService.marcarEncontrado(animalToConfirm.id);
-        
+
         // Mover da lista de perdidos para encontrados
         const animal = perdidos.find(a => a.id === animalToConfirm.id);
         if (animal) {
           setPerdidos(prev => prev.filter(a => a.id !== animalToConfirm.id));
           setEncontrados(prev => [{ ...animal, found: true }, ...prev]);
         }
-        
+
         toast.success(`${animalToConfirm.name} marcado como encontrado!`);
       } catch (error) {
         console.error('Erro ao marcar como encontrado:', error);
@@ -89,7 +99,7 @@ export default function LostAnimals() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const newAnimal: LostAnimalCreate = {
         name: formData.name,
@@ -104,7 +114,7 @@ export default function LostAnimals() {
 
       const created = await lostService.reportar(newAnimal);
       setPerdidos(prev => [created, ...prev]);
-      
+
       setShowForm(false);
       setFormData({
         name: '',
@@ -116,7 +126,7 @@ export default function LostAnimals() {
         contact_phone: '',
         photo: '',
       });
-      
+
       toast.success('Animal perdido reportado com sucesso!');
     } catch (error) {
       console.error('Erro ao reportar:', error);
@@ -359,7 +369,7 @@ export default function LostAnimals() {
                 </div>
                 <div className="p-4">
                   <h3 className="text-xl font-bold mb-3">{animal.name}</h3>
-                  
+
                   <div className="space-y-2 mb-4">
                     <div className="flex items-start gap-2 text-sm text-gray-600">
                       <MapPin className="w-4 h-4 mt-0.5 shrink-0" />

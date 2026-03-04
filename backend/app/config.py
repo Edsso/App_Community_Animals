@@ -5,7 +5,7 @@ import os
 load_dotenv()
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = os.getenv('DATABASE_URL', 'Coloque_aqui_a_sua_DATABASE_URL_de_conexão')
+    DATABASE_URL: str = os.getenv('DATABASE_URL', 'Coloque aqui a sua URL do banco de dados')
 
     class Config:
         env_file = '.env'

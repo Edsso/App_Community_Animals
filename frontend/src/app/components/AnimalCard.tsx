@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Animal } from '../data/mockData';
+import { Animal } from '../services/animals';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { MapPin, User, Syringe, Shield } from 'lucide-react';
@@ -9,12 +9,15 @@ interface AnimalCardProps {
 }
 
 export function AnimalCard({ animal }: AnimalCardProps) {
+  const getImageSrc = (photo: string | null) => {
+    return photo || 'https://via.placeholder.com/300?text=Sem+Imagem';
+  };
   return (
     <Link to={`/animal/${animal.id}`}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col cursor-pointer">
         <div className="aspect-square w-full overflow-hidden bg-gray-100">
           <img
-            src={animal.photo}
+            src={getImageSrc(animal.photo)}
             alt={animal.name}
             className="w-full h-full object-cover"
           />

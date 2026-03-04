@@ -1,18 +1,28 @@
-import { Outlet, Navigate } from "react-router";
+import { Outlet, Navigate, useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { Navbar } from "../components/Navbar";
+import { useEffect } from "react";
+import { ChatAssistant } from "../components/ChatAssistant";
 
 export default function ProtectedLayout() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <Outlet />
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+      <ChatAssistant />
     </div>
   );
 }

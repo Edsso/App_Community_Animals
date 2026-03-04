@@ -4,11 +4,16 @@ const API_URL = 'http://localhost:8000';
 export const api = {
   // GET
   get: async (endpoint: string) => {
-    const response = await fetch(`${API_URL}${endpoint}`);
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Brearer fake_token'
+      }
+    });
     if (!response.ok) throw new Error('Erro na requisição');
     return response.json();
   },
-  
+
   // POST
   post: async (endpoint: string, data: any) => {
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -19,7 +24,7 @@ export const api = {
     if (!response.ok) throw new Error('Erro na requisição');
     return response.json();
   },
-  
+
   // PUT
   put: async (endpoint: string, data: any) => {
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -41,7 +46,7 @@ export const api = {
     if (!response.ok) throw new Error('Erro na requisição');
     return response.json();
   },
-  
+
   // DELETE
   delete: async (endpoint: string) => {
     const response = await fetch(`${API_URL}${endpoint}`, {

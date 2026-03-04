@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import animals, lost
+from app.ai import ai_router
 from app.database import engine, Base
 
 # Cria as tabelas no banco (caso não exista)
@@ -26,6 +27,7 @@ app.add_middleware(
 # Inclui as rotas
 app.include_router(animals.router)
 app.include_router(lost.router)
+app.include_router(ai_router)
 
 @app.get("/")
 def root():
@@ -35,11 +37,13 @@ def root():
         "redoc": "/redoc",
         "endpoints": {
             "animais": {
+                "assistente": "/ai/chat",
                 "listar": "GET /animals",
                 "buscar": "GET /animals/{id}",
                 "criar": "POST /animals",
                 "atualizar": "PUT /animals/{id}",
-                "deletar": "DELETE /animals/{id}"
+                "deletar": "DELETE /animals/{id}",
+                "health": "/ai/health"
             },
             "perdidos": {
                 "listar": "GET /lost",

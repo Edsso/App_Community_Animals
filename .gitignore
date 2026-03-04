@@ -1,5 +1,4 @@
 frontend/node_modules/
+frontend/dist/
 .vscode/
 .vite
-# backend/
-# frontend/src/app/services/
